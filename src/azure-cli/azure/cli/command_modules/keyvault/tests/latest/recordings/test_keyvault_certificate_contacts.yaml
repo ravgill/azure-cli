@@ -31,19 +31,19 @@ interactions:
       dataserviceversion:
       - 3.0;
       date:
-      - Thu, 06 Feb 2020 11:19:16 GMT
+      - Tue, 10 Mar 2020 13:45:32 GMT
       duration:
-      - '2076160'
+      - '2429776'
       expires:
       - '-1'
       ocp-aad-diagnostics-server-name:
-      - dXyxkIBYYQkBkZJ4AkzVLrRp6D1VNgNsuaDV5+FOo60=
+      - xsDuxg+DnSkPNi77Rg8RaRUuQ9cvtYMMdi27ynpDZuA=
       ocp-aad-session-key:
-      - hJEoDt7LUA07eYl8qy-VhtCbelIeAl-55szhoPzXHZxBxpRNLth1z8zGFJcGOzmDUlUNBUnY0Vr2QAvDJJbIb-oeGn9W48lgsr4DCloO4ciGC9a8WwWorM7GkTzdA32k.KjHA2BGkZjABCEoHMSs_3i7zXaCm2Lb199X_ZdwcncA
+      - dPOHX6TDs1C7Ucjs2Pgk0-Iy6ctdoiKpt5E5XZv9oO2c6rVq3YosEbtflcFZAvuq9vakfW1kTKeIqe6tx3qiQI1kSZyiiBk26x4VUmKhOUJ8K4CqygZBzbU5Zky4kOhO.QhXfd7sLtk6PtfRt5peO9OyuX3nhj6H8Jaf-pteWWY8
       pragma:
       - no-cache
       request-id:
-      - af55149c-5825-44b7-8436-0669dd1226f8
+      - 2c0972f4-459f-49a9-984a-d0fd8df7208a
       strict-transport-security:
       - max-age=31536000; includeSubDomains
       x-aspnet-version:
@@ -64,7 +64,8 @@ interactions:
       "recover"], "certificates": ["get", "list", "delete", "create", "import", "update",
       "managecontacts", "getissuers", "listissuers", "setissuers", "deleteissuers",
       "manageissuers", "recover"], "storage": ["get", "list", "delete", "set", "update",
-      "regeneratekey", "setsas", "listsas", "getsas", "deletesas"]}}]}}'
+      "regeneratekey", "setsas", "listsas", "getsas", "deletesas"]}}], "enableSoftDelete":
+      false}}'
     headers:
       Accept:
       - application/json
@@ -75,30 +76,30 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '745'
+      - '772'
       Content-Type:
       - application/json; charset=utf-8
       ParameterSetName:
-      - -g -n -l --sku
+      - -g -n -l --sku --enable-soft-delete
       User-Agent:
-      - python/3.7.6 (Windows-10-10.0.18362-SP0) msrest/0.6.9 msrest_azure/0.6.2 azure-mgmt-keyvault/2.1.0
-        Azure-SDK-For-Python AZURECLI/2.0.81
+      - python/3.7.6 (Windows-10-10.0.18362-SP0) msrest/0.6.9 msrest_azure/0.6.2 azure-mgmt-keyvault/2.1.1
+        Azure-SDK-For-Python AZURECLI/2.2.0
       accept-language:
       - en-US
     method: PUT
-    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/cli_test_kv_cert_contacts000001/providers/Microsoft.KeyVault/vaults/cli-test-kv-ct-co-000002?api-version=2018-02-14
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/cli_test_kv_cert_contacts000001/providers/Microsoft.KeyVault/vaults/cli-test-kv-ct-co-000002?api-version=2019-09-01
   response:
     body:
-      string: '{"id":"/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/cli_test_kv_cert_contacts000001/providers/Microsoft.KeyVault/vaults/cli-test-kv-ct-co-000002","name":"cli-test-kv-ct-co-000002","type":"Microsoft.KeyVault/vaults","location":"westus","tags":{},"properties":{"sku":{"family":"A","name":"premium"},"tenantId":"54826b22-38d6-4fb2-bad9-b7b93a3e9c5a","accessPolicies":[{"tenantId":"54826b22-38d6-4fb2-bad9-b7b93a3e9c5a","objectId":"9ac02ab3-5061-4ec6-a3d8-2cdaa5f29efa","permissions":{"keys":["get","create","delete","list","update","import","backup","restore","recover"],"secrets":["get","list","set","delete","backup","restore","recover"],"certificates":["get","list","delete","create","import","update","managecontacts","getissuers","listissuers","setissuers","deleteissuers","manageissuers","recover"],"storage":["get","list","delete","set","update","regeneratekey","setsas","listsas","getsas","deletesas"]}}],"enabledForDeployment":false,"vaultUri":"https://cli-test-kv-ct-co-000002.vault.azure.net","provisioningState":"RegisteringDns"}}'
+      string: '{"id":"/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/cli_test_kv_cert_contacts000001/providers/Microsoft.KeyVault/vaults/cli-test-kv-ct-co-000002","name":"cli-test-kv-ct-co-000002","type":"Microsoft.KeyVault/vaults","location":"westus","tags":{},"properties":{"sku":{"family":"A","name":"premium"},"tenantId":"54826b22-38d6-4fb2-bad9-b7b93a3e9c5a","accessPolicies":[{"tenantId":"54826b22-38d6-4fb2-bad9-b7b93a3e9c5a","objectId":"9ac02ab3-5061-4ec6-a3d8-2cdaa5f29efa","permissions":{"keys":["get","create","delete","list","update","import","backup","restore","recover"],"secrets":["get","list","set","delete","backup","restore","recover"],"certificates":["get","list","delete","create","import","update","managecontacts","getissuers","listissuers","setissuers","deleteissuers","manageissuers","recover"],"storage":["get","list","delete","set","update","regeneratekey","setsas","listsas","getsas","deletesas"]}}],"enabledForDeployment":false,"enableSoftDelete":false,"vaultUri":"https://cli-test-kv-ct-co-000002.vault.azure.net","provisioningState":"RegisteringDns"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '1105'
+      - '1130'
       content-type:
       - application/json; charset=utf-8
       date:
-      - Thu, 06 Feb 2020 11:19:23 GMT
+      - Tue, 10 Mar 2020 13:45:39 GMT
       expires:
       - '-1'
       pragma:
@@ -116,9 +117,9 @@ interactions:
       x-content-type-options:
       - nosniff
       x-ms-keyvault-service-version:
-      - 1.1.0.269
+      - 1.1.0.271
       x-ms-ratelimit-remaining-subscription-writes:
-      - '1182'
+      - '1197'
       x-powered-by:
       - ASP.NET
     status:
@@ -136,24 +137,24 @@ interactions:
       Connection:
       - keep-alive
       ParameterSetName:
-      - -g -n -l --sku
+      - -g -n -l --sku --enable-soft-delete
       User-Agent:
-      - python/3.7.6 (Windows-10-10.0.18362-SP0) msrest/0.6.9 msrest_azure/0.6.2 azure-mgmt-keyvault/2.1.0
-        Azure-SDK-For-Python AZURECLI/2.0.81
+      - python/3.7.6 (Windows-10-10.0.18362-SP0) msrest/0.6.9 msrest_azure/0.6.2 azure-mgmt-keyvault/2.1.1
+        Azure-SDK-For-Python AZURECLI/2.2.0
     method: GET
-    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/cli_test_kv_cert_contacts000001/providers/Microsoft.KeyVault/vaults/cli-test-kv-ct-co-000002?api-version=2018-02-14
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/cli_test_kv_cert_contacts000001/providers/Microsoft.KeyVault/vaults/cli-test-kv-ct-co-000002?api-version=2019-09-01
   response:
     body:
-      string: '{"id":"/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/cli_test_kv_cert_contacts000001/providers/Microsoft.KeyVault/vaults/cli-test-kv-ct-co-000002","name":"cli-test-kv-ct-co-000002","type":"Microsoft.KeyVault/vaults","location":"westus","tags":{},"properties":{"sku":{"family":"A","name":"premium"},"tenantId":"54826b22-38d6-4fb2-bad9-b7b93a3e9c5a","accessPolicies":[{"tenantId":"54826b22-38d6-4fb2-bad9-b7b93a3e9c5a","objectId":"9ac02ab3-5061-4ec6-a3d8-2cdaa5f29efa","permissions":{"keys":["get","create","delete","list","update","import","backup","restore","recover"],"secrets":["get","list","set","delete","backup","restore","recover"],"certificates":["get","list","delete","create","import","update","managecontacts","getissuers","listissuers","setissuers","deleteissuers","manageissuers","recover"],"storage":["get","list","delete","set","update","regeneratekey","setsas","listsas","getsas","deletesas"]}}],"enabledForDeployment":false,"vaultUri":"https://cli-test-kv-ct-co-000002.vault.azure.net/","provisioningState":"Succeeded"}}'
+      string: '{"id":"/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/cli_test_kv_cert_contacts000001/providers/Microsoft.KeyVault/vaults/cli-test-kv-ct-co-000002","name":"cli-test-kv-ct-co-000002","type":"Microsoft.KeyVault/vaults","location":"westus","tags":{},"properties":{"sku":{"family":"A","name":"premium"},"tenantId":"54826b22-38d6-4fb2-bad9-b7b93a3e9c5a","accessPolicies":[{"tenantId":"54826b22-38d6-4fb2-bad9-b7b93a3e9c5a","objectId":"9ac02ab3-5061-4ec6-a3d8-2cdaa5f29efa","permissions":{"keys":["get","create","delete","list","update","import","backup","restore","recover"],"secrets":["get","list","set","delete","backup","restore","recover"],"certificates":["get","list","delete","create","import","update","managecontacts","getissuers","listissuers","setissuers","deleteissuers","manageissuers","recover"],"storage":["get","list","delete","set","update","regeneratekey","setsas","listsas","getsas","deletesas"]}}],"enabledForDeployment":false,"enableSoftDelete":false,"vaultUri":"https://cli-test-kv-ct-co-000002.vault.azure.net/","provisioningState":"Succeeded"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '1101'
+      - '1126'
       content-type:
       - application/json; charset=utf-8
       date:
-      - Thu, 06 Feb 2020 11:19:59 GMT
+      - Tue, 10 Mar 2020 13:46:10 GMT
       expires:
       - '-1'
       pragma:
@@ -171,7 +172,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-ms-keyvault-service-version:
-      - 1.1.0.269
+      - 1.1.0.271
       x-powered-by:
       - ASP.NET
     status:
@@ -209,7 +210,7 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       date:
-      - Thu, 06 Feb 2020 11:20:01 GMT
+      - Tue, 10 Mar 2020 13:46:12 GMT
       expires:
       - '-1'
       pragma:
@@ -226,11 +227,11 @@ interactions:
       x-content-type-options:
       - nosniff
       x-ms-keyvault-network-info:
-      - addr=59.63.206.47;act_addr_fam=InterNetwork;
+      - addr=167.220.255.4;act_addr_fam=InterNetwork;
       x-ms-keyvault-region:
       - westus
       x-ms-keyvault-service-version:
-      - 1.1.0.891
+      - 1.1.0.897
       x-powered-by:
       - ASP.NET
     status:
@@ -267,7 +268,7 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       date:
-      - Thu, 06 Feb 2020 11:20:02 GMT
+      - Tue, 10 Mar 2020 13:46:15 GMT
       expires:
       - '-1'
       pragma:
@@ -281,11 +282,11 @@ interactions:
       x-content-type-options:
       - nosniff
       x-ms-keyvault-network-info:
-      - addr=59.63.206.47;act_addr_fam=InterNetwork;
+      - addr=167.220.255.4;act_addr_fam=InterNetwork;
       x-ms-keyvault-region:
       - westus
       x-ms-keyvault-service-version:
-      - 1.1.0.891
+      - 1.1.0.897
       x-powered-by:
       - ASP.NET
     status:
@@ -324,7 +325,7 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       date:
-      - Thu, 06 Feb 2020 11:20:03 GMT
+      - Tue, 10 Mar 2020 13:46:19 GMT
       expires:
       - '-1'
       pragma:
@@ -338,11 +339,11 @@ interactions:
       x-content-type-options:
       - nosniff
       x-ms-keyvault-network-info:
-      - addr=59.63.206.47;act_addr_fam=InterNetwork;
+      - addr=167.220.255.4;act_addr_fam=InterNetwork;
       x-ms-keyvault-region:
       - westus
       x-ms-keyvault-service-version:
-      - 1.1.0.891
+      - 1.1.0.897
       x-powered-by:
       - ASP.NET
     status:
@@ -378,7 +379,7 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       date:
-      - Thu, 06 Feb 2020 11:20:04 GMT
+      - Tue, 10 Mar 2020 13:46:20 GMT
       expires:
       - '-1'
       pragma:
@@ -392,11 +393,11 @@ interactions:
       x-content-type-options:
       - nosniff
       x-ms-keyvault-network-info:
-      - addr=59.63.206.47;act_addr_fam=InterNetwork;
+      - addr=167.220.255.4;act_addr_fam=InterNetwork;
       x-ms-keyvault-region:
       - westus
       x-ms-keyvault-service-version:
-      - 1.1.0.891
+      - 1.1.0.897
       x-powered-by:
       - ASP.NET
     status:
@@ -435,7 +436,7 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       date:
-      - Thu, 06 Feb 2020 11:20:08 GMT
+      - Tue, 10 Mar 2020 13:46:21 GMT
       expires:
       - '-1'
       pragma:
@@ -449,11 +450,11 @@ interactions:
       x-content-type-options:
       - nosniff
       x-ms-keyvault-network-info:
-      - addr=59.63.206.47;act_addr_fam=InterNetwork;
+      - addr=167.220.255.4;act_addr_fam=InterNetwork;
       x-ms-keyvault-region:
       - westus
       x-ms-keyvault-service-version:
-      - 1.1.0.891
+      - 1.1.0.897
       x-powered-by:
       - ASP.NET
     status:
@@ -489,7 +490,7 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       date:
-      - Thu, 06 Feb 2020 11:20:10 GMT
+      - Tue, 10 Mar 2020 13:46:24 GMT
       expires:
       - '-1'
       pragma:
@@ -503,11 +504,11 @@ interactions:
       x-content-type-options:
       - nosniff
       x-ms-keyvault-network-info:
-      - addr=59.63.206.47;act_addr_fam=InterNetwork;
+      - addr=167.220.255.4;act_addr_fam=InterNetwork;
       x-ms-keyvault-region:
       - westus
       x-ms-keyvault-service-version:
-      - 1.1.0.891
+      - 1.1.0.897
       x-powered-by:
       - ASP.NET
     status:
@@ -543,7 +544,7 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       date:
-      - Thu, 06 Feb 2020 11:20:14 GMT
+      - Tue, 10 Mar 2020 13:46:26 GMT
       expires:
       - '-1'
       pragma:
@@ -557,11 +558,11 @@ interactions:
       x-content-type-options:
       - nosniff
       x-ms-keyvault-network-info:
-      - addr=59.63.206.47;act_addr_fam=InterNetwork;
+      - addr=167.220.255.4;act_addr_fam=InterNetwork;
       x-ms-keyvault-region:
       - westus
       x-ms-keyvault-service-version:
-      - 1.1.0.891
+      - 1.1.0.897
       x-powered-by:
       - ASP.NET
     status:
@@ -597,7 +598,7 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       date:
-      - Thu, 06 Feb 2020 11:20:16 GMT
+      - Tue, 10 Mar 2020 13:46:27 GMT
       expires:
       - '-1'
       pragma:
@@ -611,11 +612,11 @@ interactions:
       x-content-type-options:
       - nosniff
       x-ms-keyvault-network-info:
-      - addr=59.63.206.47;act_addr_fam=InterNetwork;
+      - addr=167.220.255.4;act_addr_fam=InterNetwork;
       x-ms-keyvault-region:
       - westus
       x-ms-keyvault-service-version:
-      - 1.1.0.891
+      - 1.1.0.897
       x-powered-by:
       - ASP.NET
     status:
@@ -652,7 +653,7 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       date:
-      - Thu, 06 Feb 2020 11:20:17 GMT
+      - Tue, 10 Mar 2020 13:46:28 GMT
       expires:
       - '-1'
       pragma:
@@ -666,11 +667,11 @@ interactions:
       x-content-type-options:
       - nosniff
       x-ms-keyvault-network-info:
-      - addr=59.63.206.47;act_addr_fam=InterNetwork;
+      - addr=167.220.255.4;act_addr_fam=InterNetwork;
       x-ms-keyvault-region:
       - westus
       x-ms-keyvault-service-version:
-      - 1.1.0.891
+      - 1.1.0.897
       x-powered-by:
       - ASP.NET
     status:
@@ -705,7 +706,7 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       date:
-      - Thu, 06 Feb 2020 11:20:18 GMT
+      - Tue, 10 Mar 2020 13:46:31 GMT
       expires:
       - '-1'
       pragma:
@@ -719,11 +720,11 @@ interactions:
       x-content-type-options:
       - nosniff
       x-ms-keyvault-network-info:
-      - addr=59.63.206.47;act_addr_fam=InterNetwork;
+      - addr=167.220.255.4;act_addr_fam=InterNetwork;
       x-ms-keyvault-region:
       - westus
       x-ms-keyvault-service-version:
-      - 1.1.0.891
+      - 1.1.0.897
       x-powered-by:
       - ASP.NET
     status:

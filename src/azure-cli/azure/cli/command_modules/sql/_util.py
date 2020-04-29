@@ -84,6 +84,10 @@ def get_sql_firewall_rules_operations(cli_ctx, _):
     return get_sql_management_client(cli_ctx).firewall_rules
 
 
+def get_sql_instance_pools_operations(cli_ctx, _):
+    return get_sql_management_client(cli_ctx).instance_pools
+
+
 def get_sql_recommended_elastic_pools_operations(cli_ctx, _):
     return get_sql_management_client(cli_ctx).recommended_elastic_pools
 
@@ -94,6 +98,10 @@ def get_sql_replication_links_operations(cli_ctx, _):
 
 def get_sql_restorable_dropped_databases_operations(cli_ctx, _):
     return get_sql_management_client(cli_ctx).restorable_dropped_databases
+
+
+def get_sql_restorable_dropped_managed_databases_operations(cli_ctx, _):
+    return get_sql_management_client(cli_ctx).restorable_dropped_managed_databases
 
 
 def get_sql_server_azure_ad_administrators_operations(cli_ctx, _):
@@ -132,6 +140,10 @@ def get_sql_virtual_network_rules_operations(cli_ctx, _):
     return get_sql_management_client(cli_ctx).virtual_network_rules
 
 
+def get_sql_managed_instance_operations_operations(cli_ctx, _):
+    return get_sql_management_client(cli_ctx).managed_instance_operations
+
+
 def get_sql_managed_instances_operations(cli_ctx, _):
     return get_sql_management_client(cli_ctx).managed_instances
 
@@ -144,9 +156,25 @@ def get_sql_managed_databases_operations(cli_ctx, _):
     return get_sql_management_client(cli_ctx).managed_databases
 
 
+def get_sql_managed_backup_short_term_retention_policies_operations(cli_ctx, _):
+    return get_sql_management_client(cli_ctx).managed_backup_short_term_retention_policies
+
+
+def get_sql_restorable_dropped_database_managed_backup_short_term_retention_policies_operations(cli_ctx, _):
+    return get_sql_management_client(cli_ctx).managed_restorable_dropped_database_backup_short_term_retention_policies
+
+
 def get_sql_virtual_clusters_operations(cli_ctx, _):
     return get_sql_management_client(cli_ctx).virtual_clusters
 
 
 def get_sql_instance_failover_groups_operations(cli_ctx, _):
     return get_sql_management_client(cli_ctx).instance_failover_groups
+
+
+def get_sql_managed_database_long_term_retention_policies_operations(cli_ctx, _):
+    return get_sql_management_client(cli_ctx).managed_instance_long_term_retention_policies
+
+
+def get_sql_managed_database_long_term_retention_backups_operations(cli_ctx, _):
+    return get_sql_management_client(cli_ctx).long_term_retention_managed_instance_backups

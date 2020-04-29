@@ -37,7 +37,8 @@ from azure.mgmt.sql.models import (
     ManagedInstancePairInfo,
     PartnerRegionInfo,
     InstanceFailoverGroupReadOnlyEndpoint,
-    InstanceFailoverGroupReadWriteEndpoint
+    InstanceFailoverGroupReadWriteEndpoint,
+    ServerPublicNetworkAccess
 )
 
 from knack.log import get_logger
@@ -45,8 +46,13 @@ from knack.log import get_logger
 from ._util import (
     get_sql_capabilities_operations,
     get_sql_servers_operations,
-    get_sql_managed_instances_operations
+    get_sql_managed_instances_operations,
+    get_sql_restorable_dropped_database_managed_backup_short_term_retention_policies_operations,
 )
+
+from datetime import datetime
+from dateutil.parser import parse
+import calendar
 
 logger = get_logger(__name__)
 
@@ -65,6 +71,18 @@ def _get_server_location(cli_ctx, server_name, resource_group_name):
     return server_client.get(
         server_name=server_name,
         resource_group_name=resource_group_name).location
+
+
+def _get_managed_restorable_dropped_database_backup_short_term_retention_client(cli_ctx):
+    '''
+    Returns client for managed restorable dropped databases.
+    '''
+
+    server_client = \
+        get_sql_restorable_dropped_database_managed_backup_short_term_retention_policies_operations(cli_ctx, None)
+
+    # pylint: disable=no-member
+    return server_client
 
 
 def _get_managed_instance_location(cli_ctx, managed_instance_name, resource_group_name):
@@ -425,6 +443,19 @@ class FailoverPolicyType(Enum):
     manual = 'Manual'
 
 
+class SqlServerMinimalTlsVersionType(Enum):
+    tls_1_0 = "1.0"
+    tls_1_1 = "1.1"
+    tls_1_2 = "1.2"
+
+
+class SqlManagedInstanceMinimalTlsVersionType(Enum):
+    no_tls = "None"
+    tls_1_0 = "1.0"
+    tls_1_1 = "1.1"
+    tls_1_2 = "1.2"
+
+
 class ComputeModelType(str, Enum):
 
     provisioned = "Provisioned"
@@ -447,14 +478,62 @@ def _get_managed_db_resource_id(cli_ctx, resource_group_name, managed_instance_n
     '''
 
     # url parse package has different names in Python 2 and 3. 'six' package works cross-version.
+    from azure.cli.core.commands.client_factory import get_subscription_id
+    from msrestazure.tools import resource_id
+
+    return resource_id(
+        subscription=get_subscription_id(cli_ctx),
+        resource_group=resource_group_name,
+        namespace='Microsoft.Sql', type='managedInstances',
+        name=managed_instance_name,
+        child_type_1='databases',
+        child_name_1=database_name)
+
+
+def _to_filetimeutc(dateTime):
+    '''
+    Changes given datetime to filetimeutc string
+    '''
+
+    NET_epoch = datetime(1601, 1, 1)
+    UNIX_epoch = datetime(1970, 1, 1)
+
+    epoch_delta = (UNIX_epoch - NET_epoch)
+
+    log_time = parse(dateTime)
+
+    net_ts = calendar.timegm((log_time + epoch_delta).timetuple())
+
+    # units of seconds since NET epoch
+    filetime_utc_ts = net_ts * (10**7) + log_time.microsecond * 10
+
+    return filetime_utc_ts
+
+
+def _get_managed_dropped_db_resource_id(
+        cli_ctx,
+        resource_group_name,
+        managed_instance_name,
+        database_name,
+        deleted_time):
+    '''
+    Gets the Managed db resource id in this Azure environment.
+    '''
+
+    # url parse package has different names in Python 2 and 3. 'six' package works cross-version.
     from six.moves.urllib.parse import quote  # pylint: disable=import-error
     from azure.cli.core.commands.client_factory import get_subscription_id
+    from msrestazure.tools import resource_id
 
-    return '/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}'.format(
-        quote(get_subscription_id(cli_ctx)),
-        quote(resource_group_name),
-        quote(managed_instance_name),
-        quote(database_name))
+    return (resource_id(
+        subscription=get_subscription_id(cli_ctx),
+        resource_group=resource_group_name,
+        namespace='Microsoft.Sql', type='managedInstances',
+        name=managed_instance_name,
+        child_type_1='restorableDroppedDatabases',
+        child_name_1='{},{}'.format(
+            quote(database_name),
+            _to_filetimeutc(deleted_time))))
 
 
 def db_show_conn_str(
@@ -1898,6 +1977,82 @@ def elastic_pool_list_capabilities(
 
     return editions
 
+###############################################
+#                sql instance-pool            #
+###############################################
+
+
+def instance_pool_list(
+        client,
+        resource_group_name=None):
+    '''
+    Lists servers in a resource group or subscription
+    '''
+
+    if resource_group_name:
+        # List all instance pools in the resource group
+        return client.list_by_resource_group(
+            resource_group_name=resource_group_name)
+
+    # List all instance pools in the subscription
+    return client.list()
+
+
+def instance_pool_create(
+        cmd,
+        client,
+        instance_pool_name,
+        resource_group_name,
+        no_wait=False,
+        sku=None,
+        **kwargs):
+    '''
+    Creates a new instance pool
+    '''
+
+    kwargs['sku'] = _find_instance_pool_sku_from_capabilities(
+        cmd.cli_ctx, kwargs['location'], sku)
+
+    return sdk_no_wait(no_wait, client.create_or_update,
+                       instance_pool_name=instance_pool_name,
+                       resource_group_name=resource_group_name,
+                       parameters=kwargs)
+
+
+def _find_instance_pool_sku_from_capabilities(cli_ctx, location, sku):
+    '''
+    Validate if the sku family and edition input by user are permissible in the region using
+    capabilities API and get the SKU name
+    '''
+
+    logger.debug('_find_instance_pool_sku_from_capabilities input: %s', sku)
+
+    # Get location capability
+    loc_capability = _get_location_capability(
+        cli_ctx, location, CapabilityGroup.supported_managed_instance_versions)
+
+    # Get default server version capability
+    managed_instance_version_capability = _get_default_capability(
+        loc_capability.supported_managed_instance_versions)
+
+    # Find edition capability, based on requested sku properties
+    edition_capability = _find_edition_capability(
+        sku, managed_instance_version_capability.supported_instance_pool_editions)
+
+    # Find family level capability, based on requested sku properties
+    _find_family_capability(
+        sku, edition_capability.supported_families)
+
+    result = Sku(
+        name="instance-pool",
+        tier=sku.tier,
+        family=sku.family)
+
+    logger.debug(
+        '_find_instance_pool_sku_from_capabilities return: %s',
+        result)
+    return result
+
 
 ###############################################
 #                sql server                   #
@@ -1909,6 +2064,7 @@ def server_create(
         server_name,
         assign_identity=False,
         no_wait=False,
+        enable_public_network=None,
         **kwargs):
     '''
     Creates a server.
@@ -1916,6 +2072,11 @@ def server_create(
 
     if assign_identity:
         kwargs['identity'] = ResourceIdentity(type=IdentityType.system_assigned.value)
+
+    if enable_public_network is not None:
+        kwargs['public_network_access'] = (
+            ServerPublicNetworkAccess.enabled if enable_public_network
+            else ServerPublicNetworkAccess.disabled)
 
     # Create
     return sdk_no_wait(no_wait, client.create_or_update,
@@ -1942,7 +2103,9 @@ def server_list(
 def server_update(
         instance,
         administrator_login_password=None,
-        assign_identity=False):
+        assign_identity=False,
+        minimal_tls_version=None,
+        enable_public_network=None):
     '''
     Updates a server. Custom update function to apply parameters to instance.
     '''
@@ -1954,6 +2117,13 @@ def server_update(
     # Apply params to instance
     instance.administrator_login_password = (
         administrator_login_password or instance.administrator_login_password)
+    instance.minimal_tls_version = (
+        minimal_tls_version or instance.minimal_tls_version)
+
+    if enable_public_network is not None:
+        instance.public_network_access = (
+            ServerPublicNetworkAccess.enabled if enable_public_network
+            else ServerPublicNetworkAccess.disabled)
 
     return instance
 
@@ -1977,7 +2147,7 @@ def server_ad_admin_set(
     return client.create_or_update(
         server_name=server_name,
         resource_group_name=resource_group_name,
-        properties=kwargs)
+        parameters=kwargs)
 
 
 def server_ad_admin_update(
@@ -1995,7 +2165,6 @@ def server_ad_admin_update(
     instance.tenant_id = tenant_id or instance.tenant_id
 
     return instance
-
 
 #####
 #           sql server firewall-rule
@@ -2294,7 +2463,8 @@ def managed_instance_update(
         proxy_override=None,
         public_data_endpoint_enabled=None,
         tier=None,
-        family=None):
+        family=None,
+        minimal_tls_version=None):
     '''
     Updates a managed instance. Custom update function to apply parameters to instance.
     '''
@@ -2314,6 +2484,8 @@ def managed_instance_update(
         storage_size_in_gb or instance.storage_size_in_gb)
     instance.proxy_override = (
         proxy_override or instance.proxy_override)
+    instance.minimal_tls_version = (
+        minimal_tls_version or instance.minimal_tls_version)
 
     instance.sku.name = None
     instance.sku.tier = (
@@ -2490,6 +2662,7 @@ def managed_db_restore(
         target_managed_database_name,
         target_managed_instance_name=None,
         target_resource_group_name=None,
+        deleted_time=None,
         **kwargs):
     '''
     Restores an existing managed DB (i.e. create with 'PointInTimeRestore' create mode.)
@@ -2509,11 +2682,386 @@ def managed_db_restore(
         resource_group_name=resource_group_name)
 
     kwargs['create_mode'] = CreateMode.point_in_time_restore.value
-    kwargs['source_database_id'] = _get_managed_db_resource_id(
-        cmd.cli_ctx,
-        resource_group_name,
+
+    if deleted_time:
+        kwargs['restorable_dropped_database_id'] = _get_managed_dropped_db_resource_id(
+            cmd.cli_ctx,
+            resource_group_name,
+            managed_instance_name,
+            database_name,
+            deleted_time)
+    else:
+        kwargs['source_database_id'] = _get_managed_db_resource_id(
+            cmd.cli_ctx,
+            resource_group_name,
+            managed_instance_name,
+            database_name)
+
+    return client.create_or_update(
+        database_name=target_managed_database_name,
+        managed_instance_name=target_managed_instance_name,
+        resource_group_name=target_resource_group_name,
+        parameters=kwargs)
+
+
+def update_short_term_retention_mi(
+        cmd,
+        client,
+        database_name,
         managed_instance_name,
-        database_name)
+        resource_group_name,
+        retention_days,
+        deleted_time=None):
+    '''
+    Updates short term retention for database
+    '''
+
+    if deleted_time:
+        database_name = '{},{}'.format(
+            database_name,
+            _to_filetimeutc(deleted_time))
+
+        client = \
+            get_sql_restorable_dropped_database_managed_backup_short_term_retention_policies_operations(
+                cmd.cli_ctx,
+                None)
+
+        policy = client.create_or_update(
+            restorable_dropped_database_id=database_name,
+            managed_instance_name=managed_instance_name,
+            resource_group_name=resource_group_name,
+            retention_days=retention_days)
+    else:
+        policy = client.create_or_update(
+            database_name=database_name,
+            managed_instance_name=managed_instance_name,
+            resource_group_name=resource_group_name,
+            retention_days=retention_days)
+
+    return policy
+
+
+def get_short_term_retention_mi(
+        cmd,
+        client,
+        database_name,
+        managed_instance_name,
+        resource_group_name,
+        deleted_time=None):
+    '''
+    Gets short term retention for database
+    '''
+
+    if deleted_time:
+        database_name = '{},{}'.format(
+            database_name,
+            _to_filetimeutc(deleted_time))
+
+        client = \
+            get_sql_restorable_dropped_database_managed_backup_short_term_retention_policies_operations(
+                cmd.cli_ctx,
+                None)
+
+        policy = client.get(
+            restorable_dropped_database_id=database_name,
+            managed_instance_name=managed_instance_name,
+            resource_group_name=resource_group_name)
+    else:
+        policy = client.get(
+            database_name=database_name,
+            managed_instance_name=managed_instance_name,
+            resource_group_name=resource_group_name)
+
+    return policy
+
+
+def _is_int(retention):
+    try:
+        int(retention)
+        return True
+    except ValueError:
+        return False
+
+
+def update_long_term_retention_mi(
+        client,
+        database_name,
+        managed_instance_name,
+        resource_group_name,
+        weekly_retention=None,
+        monthly_retention=None,
+        yearly_retention=None,
+        week_of_year=None,
+        **kwargs):
+    '''
+    Updates long term retention for managed database
+    '''
+
+    if not (weekly_retention or monthly_retention or yearly_retention):
+        raise CLIError('Please specify retention setting(s).  See \'--help\' for more details.')
+
+    if yearly_retention and not week_of_year:
+        raise CLIError('Please specify week of year for yearly retention.')
+
+    # if an int is provided for retention, convert to ISO 8601 using days
+    if (weekly_retention and _is_int(weekly_retention)):
+        weekly_retention = 'P%sD' % weekly_retention
+        print(weekly_retention)
+
+    if (monthly_retention and _is_int(monthly_retention)):
+        monthly_retention = 'P%sD' % monthly_retention
+
+    if (yearly_retention and _is_int(yearly_retention)):
+        yearly_retention = 'P%sD' % yearly_retention
+
+    kwargs['weekly_retention'] = weekly_retention
+
+    kwargs['monthly_retention'] = monthly_retention
+
+    kwargs['yearly_retention'] = yearly_retention
+
+    kwargs['week_of_year'] = week_of_year
+
+    policy = client.create_or_update(
+        database_name=database_name,
+        managed_instance_name=managed_instance_name,
+        resource_group_name=resource_group_name,
+        parameters=kwargs)
+
+    return policy
+
+
+def _get_backup_id_resource_values(backup_id):
+    '''
+    Extract resource values from the backup id
+    '''
+
+    backup_id = backup_id.replace('\'', '')
+    backup_id = backup_id.replace('"', '')
+
+    if backup_id[0] == '/':
+        # remove leading /
+        backup_id = backup_id[1:]
+
+    resources_list = backup_id.split('/')
+    resources_dict = {resources_list[i]: resources_list[i + 1] for i in range(0, len(resources_list), 2)}
+
+    if not ('locations'.casefold() in resources_dict and
+            'longTermRetentionManagedInstances'.casefold() not in resources_dict and
+            'longTermRetentionDatabases'.casefold() not in resources_dict and
+            'longTermRetentionManagedInstanceBackups'.casefold() not in resources_dict):
+
+        # backup ID should contain all these
+        raise CLIError('Please provide a valid resource URI.  See --help for example.')
+
+    return resources_dict
+
+
+def get_long_term_retention_mi_backup(
+        client,
+        location_name=None,
+        managed_instance_name=None,
+        database_name=None,
+        backup_name=None,
+        backup_id=None):
+    '''
+    Gets the requested long term retention backup.
+    '''
+
+    if backup_id:
+        resources_dict = _get_backup_id_resource_values(backup_id)
+
+        location_name = resources_dict['locations']
+        managed_instance_name = resources_dict['longTermRetentionManagedInstances']
+        database_name = resources_dict['longTermRetentionDatabases']
+        backup_name = resources_dict['longTermRetentionManagedInstanceBackups']
+
+    return client.get(
+        location_name=location_name,
+        managed_instance_name=managed_instance_name,
+        database_name=database_name,
+        backup_name=backup_name)
+
+
+def _list_by_database_long_term_retention_mi_backups(
+        client,
+        location_name,
+        managed_instance_name,
+        database_name,
+        resource_group_name=None,
+        only_latest_per_database=None,
+        database_state=None):
+    '''
+    Gets the long term retention backups for a Managed Database
+    '''
+
+    if resource_group_name:
+        backups = client.list_by_resource_group_database(
+            resource_group_name=resource_group_name,
+            location_name=location_name,
+            managed_instance_name=managed_instance_name,
+            database_name=database_name,
+            only_latest_per_database=only_latest_per_database,
+            database_state=database_state)
+    else:
+        backups = client.list_by_database(
+            location_name=location_name,
+            managed_instance_name=managed_instance_name,
+            database_name=database_name,
+            only_latest_per_database=only_latest_per_database,
+            database_state=database_state)
+
+    return backups
+
+
+def _list_by_instance_long_term_retention_mi_backups(
+        client,
+        location_name,
+        managed_instance_name,
+        resource_group_name=None,
+        only_latest_per_database=None,
+        database_state=None):
+    '''
+    Gets the long term retention backups within a Managed Instance
+    '''
+
+    if resource_group_name:
+        backups = client.list_by_resource_group_instance(
+            resource_group_name=resource_group_name,
+            location_name=location_name,
+            managed_instance_name=managed_instance_name,
+            only_latest_per_database=only_latest_per_database,
+            database_state=database_state)
+    else:
+        backups = client.list_by_instance(
+            location_name=location_name,
+            managed_instance_name=managed_instance_name,
+            only_latest_per_database=only_latest_per_database,
+            database_state=database_state)
+
+    return backups
+
+
+def _list_by_location_long_term_retention_mi_backups(
+        client,
+        location_name,
+        resource_group_name=None,
+        only_latest_per_database=None,
+        database_state=None):
+    '''
+    Gets the long term retention backups within a specified region.
+    '''
+
+    if resource_group_name:
+        backups = client.list_by_resource_group_location(
+            resource_group_name=resource_group_name,
+            location_name=location_name,
+            only_latest_per_database=only_latest_per_database,
+            database_state=database_state)
+    else:
+        backups = client.list_by_location(
+            location_name=location_name,
+            only_latest_per_database=only_latest_per_database,
+            database_state=database_state)
+
+    return backups
+
+
+def list_long_term_retention_mi_backups(
+        client,
+        location_name,
+        managed_instance_name=None,
+        database_name=None,
+        resource_group_name=None,
+        only_latest_per_database=None,
+        database_state=None):
+    '''
+    Lists the long term retention backups for a specified location, instance, or database.
+    '''
+
+    if managed_instance_name:
+        if database_name:
+            backups = _list_by_database_long_term_retention_mi_backups(
+                client,
+                location_name,
+                managed_instance_name,
+                database_name,
+                resource_group_name,
+                only_latest_per_database,
+                database_state)
+
+        else:
+            backups = _list_by_instance_long_term_retention_mi_backups(
+                client,
+                location_name,
+                managed_instance_name,
+                resource_group_name,
+                only_latest_per_database,
+                database_state)
+    else:
+        backups = _list_by_location_long_term_retention_mi_backups(
+            client,
+            location_name,
+            resource_group_name,
+            only_latest_per_database,
+            database_state)
+
+    return backups
+
+
+def delete_long_term_retention_mi_backup(
+        client,
+        location_name=None,
+        managed_instance_name=None,
+        database_name=None,
+        backup_name=None,
+        backup_id=None):
+    '''
+    Deletes the requested long term retention backup.
+    '''
+
+    if backup_id:
+        resources_dict = _get_backup_id_resource_values(backup_id)
+
+        location_name = resources_dict['locations']
+        managed_instance_name = resources_dict['longTermRetentionManagedInstances']
+        database_name = resources_dict['longTermRetentionDatabases']
+        backup_name = resources_dict['longTermRetentionManagedInstanceBackups']
+
+    return client.delete(
+        location_name=location_name,
+        managed_instance_name=managed_instance_name,
+        database_name=database_name,
+        backup_name=backup_name)
+
+
+def restore_long_term_retention_mi_backup(
+        cmd,
+        client,
+        long_term_retention_backup_resource_id,
+        target_managed_database_name,
+        target_managed_instance_name,
+        target_resource_group_name,
+        **kwargs):
+    '''
+    Restores an existing managed DB (i.e. create with 'RestoreLongTermRetentionBackup' create mode.)
+    '''
+
+    if not target_resource_group_name or not target_managed_instance_name or not target_managed_database_name:
+        raise CLIError('Please specify target resource(s). '
+                       'Target resource group, target instance, and target database '
+                       'are all required for restore LTR backup.')
+
+    if not long_term_retention_backup_resource_id:
+        raise CLIError('Please specify a long term retention backup.')
+
+    kwargs['location'] = _get_managed_instance_location(
+        cmd.cli_ctx,
+        managed_instance_name=target_managed_instance_name,
+        resource_group_name=target_resource_group_name)
+
+    kwargs['create_mode'] = CreateMode.restore_long_term_retention_backup.value
+    kwargs['long_term_retention_backup_resource_id'] = long_term_retention_backup_resource_id
 
     return client.create_or_update(
         database_name=target_managed_database_name,
